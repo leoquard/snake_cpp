@@ -1,26 +1,37 @@
 #pragma once
 
-#include <optional>
-#include <termios.h>
+#include <string>
 #include <string_view>
+#include <termios.h>
+namespace snake {
 
-namespace snake{
+class Terminal
+{
+public:
+  Terminal();
+  ~Terminal();
 
+  enum class read_result
+  {
+    Char,
+    TIME_OUT,
+    Eof,
+    ERROR
+  };
 
-    class Terminal{
-        public:
-            Terminal();
-            ~Terminal();
+  Terminal(const Terminal&) = delete;
+  Terminal& operator=(const Terminal&) = delete;
 
-            Terminal(const Terminal&) = delete;
-            Terminal& operator=(const Terminal&) = delete;
+  void begin_frame();
+  void clean();
+  void move_to(int row, int col);
+  void put(std::string_view text);
+  void present();
+  read_result read_char(int timout_ms, char* read_out);
 
-            void clean();
-            void move_to(int row, int col);
-            void put(std::string_view text);
-            std::optional<char> read_char();
-        private:
-            termios saved_{};
-            bool raw_active_ = false;
-    };
+private:
+  termios saved_{};
+  bool raw_active_ = false;
+  std::string frame_;
+};
 }

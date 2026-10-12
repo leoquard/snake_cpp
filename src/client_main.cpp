@@ -4,9 +4,15 @@
 namespace snake {
 namespace {
 volatile sig_atomic_t go_running = 1;
-void on_signal(int) { go_running = 0; }
+void
+on_signal(int)
+{
+  go_running = 0;
+}
 
-void install_signal_handler() {
+void
+install_signal_handler()
+{
   struct sigaction sig{};
   sig.sa_handler = on_signal;
   sigemptyset(&sig.sa_mask);
@@ -19,7 +25,9 @@ void install_signal_handler() {
 
 } // namespace snake
 
-int main() {
+int
+main()
+{
   snake::install_signal_handler();
 
   snake::Terminal term;
@@ -55,12 +63,25 @@ int main() {
   term.move_to(6, 6);
   term.put("click 'q' to exit...");
 
+  constexpr int kFrameMs = 80;
+
   while (snake::go_running) {
-    auto ch = term.read_char();
-    if (!ch)
-      break;
-    if (*ch == 'q')
-      break;
+    char ch = 0;
+    switch (term.read_char(kFrameMs, &ch)) {
+      case snake::Terminal::read_result::Char:
+        if (ch == 'q')
+          snake::go_running = 0;
+        break;
+      case snake::Terminal::read_result::TIME_OUT:
+        break;
+      case snake::Terminal::read_result::Eof:
+        term.put("read error eof");
+        snake::go_running = 0;
+        break;
+      case snake::Terminal::read_result::ERROR:
+        snake::go_running = 0;
+        break;
+    }
   }
 
   return 0;
