@@ -52,7 +52,6 @@ void
 Terminal::begin_frame()
 {
   frame_.clear();
-  return;
 }
 void
 Terminal::clean()
@@ -65,8 +64,8 @@ Terminal::move_to(int row, int col)
 {
   char buf[32];
   int len = snprintf(buf, sizeof(buf), "\033[%d;%dH", row + 1, col + 1);
-  if (len < 0 && len > static_cast<int>(sizeof(buf))) {
-    frame_.append(buf, static_cast<size_t>(len));
+  if (len > 0 && len < static_cast<int>(sizeof(buf))) {
+    frame_.append(buf, static_cast<std::size_t>(len));
   }
 }
 
@@ -85,32 +84,36 @@ Terminal::read_char(int timeout_ms, char* read_out)
 
   int ret = ::poll(&fds, 1, timeout_ms);
 
-  if (ret < 0) {
-    return Terminal::read_result::ERROR;
-  } else if (ret == 0) {
-    return Terminal::read_result::TIME_OUT;
-  } else if (ret > 0) {
-    switch (::read(STDIN_FILENO, read_out, 1)) {
-      case 1:
-        return read_result::Char;
-        break;
-      case 0:
+  if (ret < 0)
+    return errno == EINTR ? read_result::TIME_OUT : read_result::ERROR;
+
+  if (ret == 0)
+    return read_result::TIME_OUT;
+
+  constexpr int kReadpoll = POLLIN | POLLHUP | POLLERR | POLLNVAL;
+
+  if ((fds.revents & kReadpoll) == 0)
+    return read_result::TIME_OUT;
+
+  ssize_t read_num = ::read(STDIN_FILENO, read_out, 1);
+
+  switch (read_num) {
+    case 1:
+      return read_result::Char;
+    case 0:
+      return read_result::Eof;
+    case -1:
+      if (errno == EINTR)
         return read_result::TIME_OUT;
-        break;
-      case -1:
-        if (errno == EINTR)
-          return read_result::TIME_OUT;
-        else
-          return read_result::Eof;
-        break;
-    }
+      else
+        return read_result::ERROR;
   }
+
   return read_result::ERROR;
 }
-}
-
 void
-snake::Terminal::present()
+Terminal::present()
 {
   write_all(frame_);
+}
 }

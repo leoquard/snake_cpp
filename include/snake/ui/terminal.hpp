@@ -27,7 +27,7 @@ public:
   void move_to(int row, int col);
   void put(std::string_view text);
   void present();
-  read_result read_char(int timout_ms, char* read_out);
+  read_result read_char(int timeout_ms, char* read_out);
 
 private:
   termios saved_{};

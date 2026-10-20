@@ -7,5 +7,5 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 
-add_executable(snake_client src/client_main.cpp src/ui/terminal.cpp)
+add_executable(snake_client src/client_main.cpp src/ui/terminal.cpp src/ui/input.cpp)
 target_include_directories(snake_client PRIVATE include)
